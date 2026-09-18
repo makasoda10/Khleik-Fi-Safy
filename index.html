@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>خليك ف صفي علشان هصفي</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #071018;
+      color: white;
+      font-family: Arial, Tahoma, sans-serif;
+    }
+
+    .app {
+      max-width: 600px;
+      margin: auto;
+      padding: 15px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      color: #ffc52b;
+      font-size: 24px;
+      margin: 0;
+    }
+
+    .status {
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 20px;
+      background: #3d1c20;
+      color: #ff7885;
+    }
+
+    .card {
+      background: linear-gradient(145deg,#12212d,#09131b);
+      border: 1px solid #263d4e;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .logo {
+      font-size: 70px;
+      margin: 20px 0;
+    }
+
+    h2 {
+      color: #ffc52b;
+      font-size: 28px;
+    }
+
+    p {
+      color: #91a3b1;
+      line-height: 1.7;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      padding: 15px;
+      margin-top: 10px;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #ffc52b;
+      color: #111;
+    }
+
+    .secondary {
+      background: #122a3c;
+      color: white;
+      border: 1px solid #355269;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      border-radius: 13px;
+      border: 1px solid #355269;
+      background: #07131c;
+      color: white;
+      font-size: 18px;
+      text-align: center;
+      outline: none;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .room {
+      font-size: 42px;
+      letter-spacing: 7px;
+      color: #ffc52b;
+      text-align: center;
+      font-weight: bold;
+      margin: 25px 0;
+    }
+
+    .characters {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .character {
+      background: #10202b;
+      border: 1px solid #304858;
+      border-radius: 10px;
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .avatar {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      background: #172a38;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #ffc52b;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .character.selected {
+      border: 2px solid #ffc52b;
+    }
+
+    .character.eliminated {
+      opacity: .2;
+      filter: grayscale(1);
+    }
+
+    .name {
+      font-size: 11px;
+      margin-top: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #07131c;
+      color: white;
+      border: 1px solid #355269;
+      font-size: 16px;
+      resize: vertical;
+    }
+
+    .turn {
+      text-align: center;
+      background: #3b300c;
+      color: #ffd764;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    .message {
+      background: #122b3b;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 7px;
+      font-size: 14px;
+    }
+
+    .mine {
+      background: #40350d;
+    }
+
+    @media(max-width:350px) {
+      .characters {
+        grid-template-columns: repeat(3,1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <header>
+    <h1>🎭 خليك ف صفي</h1>
+    <div id="connection" class="status">
+      غير متصل
+    </div>
+  </header>
+
+  <!-- الرئيسية -->
+
+  <section id="home">
+
+    <div class="card center">
+
+      <div class="logo">🎭</div>
+
+      <h2>
+        خليك ف صفي<br>
+        علشان هصفي
+      </h2>
+
+      <p>
+        لعبة تخمين الشخصيات المصرية
+        <br>
+        1 ضد 1
+      </p>
+
+      <button
+        class="primary"
+        onclick="createGame()">
+        🎮 إنشاء مباراة
+      </button>
+
+      <button
+        class="secondary"
+        onclick="showJoin()">
+        🔑 الانضمام لمبار
