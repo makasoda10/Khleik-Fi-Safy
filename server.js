@@ -38,6 +38,10 @@ const characters = [
   "هند صبري"
 ];
 
+/* =========================
+   HTTP SERVER
+========================= */
+
 const server = http.createServer((req, res) => {
   let requested = req.url.split("?")[0];
 
@@ -45,36 +49,51 @@ const server = http.createServer((req, res) => {
     requested = "/index.html";
   }
 
-  const filePath = path.join(
-    __dirname,
-    requested.replace(/^\/+/, "")
-  );
+  const cleanPath = requested.replace(/^\/+/, "");
+  const filePath = path.join(__dirname, cleanPath);
 
-  if (!filePath.startsWith(__dirname) || !fs.existsSync(filePath)) {
+  if (!filePath.startsWith(__dirname)) {
+    res.writeHead(403);
+    return res.end("Forbidden");
+  }
+
+  if (!fs.existsSync(filePath)) {
     res.writeHead(404);
     return res.end("Not found");
   }
 
-  const ext = path.extname(filePath);
+  const ext = path.extname(filePath).toLowerCase();
 
   const types = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
-    ".json": "application/json; charset=utf-8"
+    ".json": "application/json; charset=utf-8",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml"
   };
 
   res.writeHead(200, {
-    "Content-Type":
-      types[ext] || "application/octet-stream"
+    "Content-Type": types[ext] || "application/octet-stream"
   });
 
   fs.createReadStream(filePath).pipe(res);
 });
 
+/* =========================
+   WEBSOCKET
+========================= */
+
 const wss = new WebSocket.Server({ server });
 
 const rooms = new Map();
+
+/* =========================
+   HELPERS
+========================= */
 
 function createCode() {
   return Math.random()
@@ -95,14 +114,12 @@ function broadcast(room, data) {
   });
 }
 
-function otherPlayer(playerNumber) {
-  return playerNumber === 1 ? 2 : 1;
+function getPlayer(room, number) {
+  return room.players.find(player => player.number === number);
 }
 
-function getPlayer(room, number) {
-  return room.players.find(
-    player => player.number === number
-  );
+function otherPlayer(number) {
+  return number === 1 ? 2 : 1;
 }
 
 function sendState(room) {
@@ -116,6 +133,27 @@ function sendState(room) {
   });
 }
 
+function switchTurn(room) {
+  room.turn = otherPlayer(room.turn);
+
+  const currentPlayer = getPlayer(room, room.turn);
+
+  if (currentPlayer) {
+    currentPlayer.guessesLeft = 3;
+  }
+
+  sendState(room);
+
+  broadcast(room, {
+    type: "turn_changed",
+    turn: room.turn
+  });
+}
+
+/* =========================
+   CONNECTION
+========================= */
+
 wss.on("connection", ws => {
 
   ws.on("message", raw => {
@@ -124,7 +162,7 @@ wss.on("connection", ws => {
 
     try {
       message = JSON.parse(raw.toString());
-    } catch {
+    } catch (error) {
       send(ws, {
         type: "error",
         message: "بيانات غير صحيحة."
@@ -132,9 +170,10 @@ wss.on("connection", ws => {
       return;
     }
 
-    /*
-     * إنشاء مباراة
-     */
+    /* =====================
+       CREATE ROOM
+    ===================== */
+
     if (message.type === "create") {
 
       let code = createCode();
@@ -175,9 +214,10 @@ wss.on("connection", ws => {
       return;
     }
 
-    /*
-     * الانضمام لمباراة
-     */
+    /* =====================
+       JOIN ROOM
+    ===================== */
+
     if (message.type === "join") {
 
       const code = String(message.room || "")
@@ -231,6 +271,10 @@ wss.on("connection", ws => {
       return;
     }
 
+    /* =====================
+       FIND ROOM
+    ===================== */
+
     const room = rooms.get(ws.room);
 
     if (!room) {
@@ -249,9 +293,10 @@ wss.on("connection", ws => {
       return;
     }
 
-    /*
-     * اختيار الشخصية السرية
-     */
+    /* =====================
+       SELECT SECRET
+    ===================== */
+
     if (message.type === "secret_selected") {
 
       if (room.gameStarted) {
@@ -286,6 +331,10 @@ wss.on("connection", ws => {
         room.gameStarted = true;
         room.turn = 1;
 
+        room.players.forEach(player => {
+          player.guessesLeft = 3;
+        });
+
         broadcast(room, {
           type: "game_start",
           turn: room.turn
@@ -297,9 +346,10 @@ wss.on("connection", ws => {
       return;
     }
 
-    /*
-     * السؤال الحر
-     */
+    /* =====================
+       ASK QUESTION
+    ===================== */
+
     if (message.type === "question") {
 
       if (!room.gameStarted) {
@@ -310,6 +360,14 @@ wss.on("connection", ws => {
         send(ws, {
           type: "error",
           message: "ليس دورك الآن."
+        });
+        return;
+      }
+
+      if (room.pendingQuestion) {
+        send(ws, {
+          type: "error",
+          message: "يوجد سؤال يحتاج إلى إجابة."
         });
         return;
       }
@@ -339,9 +397,10 @@ wss.on("connection", ws => {
       return;
     }
 
-    /*
-     * الإجابة الحرة
-     */
+    /* =====================
+       ANSWER QUESTION
+    ===================== */
+
     if (message.type === "answer") {
 
       if (!room.gameStarted) {
@@ -359,4 +418,213 @@ wss.on("connection", ws => {
       if (room.pendingQuestion.from === ws.player) {
         send(ws, {
           type: "error",
-          message: "لا يمكنك الإجابة على س
+          message: "لا يمكنك الإجابة على سؤالك."
+        });
+        return;
+      }
+
+      const answer = String(message.answer || message.text || "")
+        .trim()
+        .slice(0, 100);
+
+      if (!answer) {
+        send(ws, {
+          type: "error",
+          message: "اكتب الإجابة أولًا."
+        });
+        return;
+      }
+
+      broadcast(room, {
+        type: "answer",
+        answer,
+        from: ws.player
+      });
+
+      room.pendingQuestion = null;
+
+      return;
+    }
+
+    /* =====================
+       GUESS CHARACTER
+    ===================== */
+
+    if (
+      message.type === "guess" ||
+      message.type === "guess_character"
+    ) {
+
+      if (!room.gameStarted) {
+        return;
+      }
+
+      if (room.turn !== ws.player) {
+        send(ws, {
+          type: "error",
+          message: "ليس دورك الآن."
+        });
+        return;
+      }
+
+      const guessedCharacter = Number(
+        message.character !== undefined
+          ? message.character
+          : message.guess
+      );
+
+      if (
+        !Number.isInteger(guessedCharacter) ||
+        guessedCharacter < 0 ||
+        guessedCharacter >= characters.length
+      ) {
+        send(ws, {
+          type: "error",
+          message: "الشخصية غير صحيحة."
+        });
+        return;
+      }
+
+      const opponent = otherPlayer(ws.player);
+      const secretCharacter = room.secrets[opponent];
+
+      if (guessedCharacter === secretCharacter) {
+
+        room.finished = true;
+
+        broadcast(room, {
+          type: "game_over",
+          winner: ws.player,
+          loser: opponent,
+          character: secretCharacter,
+          message:
+            "مبروك! لقد خمنت الشخصية السرية بشكل صحيح."
+        });
+
+        return;
+      }
+
+      const player = getPlayer(room, ws.player);
+
+      if (player) {
+        player.guessesLeft--;
+      }
+
+      if (player && player.guessesLeft <= 0) {
+
+        room.finished = true;
+
+        broadcast(room, {
+          type: "game_over",
+          winner: opponent,
+          loser: ws.player,
+          character: secretCharacter,
+          message:
+            "انتهت محاولات التخمين الثلاث. الخصم يفوز!"
+        });
+
+        return;
+      }
+
+      sendState(room);
+
+      send(ws, {
+        type: "wrong_guess",
+        guessesLeft: player.guessesLeft
+      });
+
+      return;
+    }
+
+    /* =====================
+       END TURN
+    ===================== */
+
+    if (
+      message.type === "end_turn" ||
+      message.type === "finish_turn"
+    ) {
+
+      if (!room.gameStarted) {
+        return;
+      }
+
+      if (room.turn !== ws.player) {
+        send(ws, {
+          type: "error",
+          message: "ليس دورك الآن."
+        });
+        return;
+      }
+
+      if (room.pendingQuestion) {
+        send(ws, {
+          type: "error",
+          message: "يجب إنهاء السؤال الحالي أولًا."
+        });
+        return;
+      }
+
+      switchTurn(room);
+
+      return;
+    }
+
+    /* =====================
+       PING
+    ===================== */
+
+    if (message.type === "ping") {
+      send(ws, {
+        type: "pong"
+      });
+      return;
+    }
+
+    /* =====================
+       UNKNOWN MESSAGE
+    ===================== */
+
+    send(ws, {
+      type: "error",
+      message: "أمر غير معروف."
+    });
+  });
+
+  /* =====================
+     DISCONNECT
+  ===================== */
+
+  ws.on("close", () => {
+
+    const room = rooms.get(ws.room);
+
+    if (!room) {
+      return;
+    }
+
+    room.players = room.players.filter(
+      player => player.ws !== ws
+    );
+
+    if (room.players.length === 0) {
+      rooms.delete(ws.room);
+      return;
+    }
+
+    broadcast(room, {
+      type: "player_left",
+      message: "الخصم غادر المباراة."
+    });
+
+    rooms.delete(ws.room);
+  });
+});
+
+/* =========================
+   START SERVER
+========================= */
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
