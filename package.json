@@ -1,7 +1,7 @@
 {
-  "name": "khleek-fi-safy",
+  "name": "khleik-fi-safy",
   "version": "1.0.0",
-  "description": "خليك ف صفي علشان هصفي - لعبة 1 ضد 1",
+  "description": "خليك ف صفي - لعبة تخمين الشخصيات المصرية",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
