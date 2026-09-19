@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>خليك ف صفي علشان هصفي</title>
+  <title>خليك في صفي 🎭</title>
 
   <style>
     * {
@@ -12,195 +12,232 @@
 
     body {
       margin: 0;
-      background: #071018;
-      color: white;
       font-family: Arial, Tahoma, sans-serif;
+      background: #10131a;
+      color: #fff;
     }
 
-    .app {
-      max-width: 600px;
+    button,
+    input,
+    textarea {
+      font-family: inherit;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
       margin: auto;
-      padding: 15px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      color: #ffc52b;
-      font-size: 24px;
-      margin: 0;
-    }
-
-    .status {
-      font-size: 12px;
-      padding: 7px 10px;
-      border-radius: 20px;
-      background: #3d1c20;
-      color: #ff7885;
+      padding: 20px;
     }
 
     .card {
-      background: linear-gradient(145deg,#12212d,#09131b);
-      border: 1px solid #263d4e;
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 15px;
+      background: #191e29;
+      border: 1px solid #2d3545;
+      border-radius: 18px;
+      padding: 25px;
+      margin-top: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
     }
 
     .center {
       text-align: center;
     }
 
+    h1,
+    h2,
+    h3 {
+      margin-top: 0;
+    }
+
     .logo {
-      font-size: 70px;
-      margin: 20px 0;
+      font-size: 34px;
+      font-weight: bold;
+      margin-bottom: 10px;
     }
 
-    h2 {
-      color: #ffc52b;
-      font-size: 28px;
+    .subtitle {
+      color: #aeb7c7;
+      margin-bottom: 25px;
     }
 
-    p {
-      color: #91a3b1;
-      line-height: 1.7;
+    input,
+    textarea {
+      width: 100%;
+      background: #0f131b;
+      color: white;
+      border: 1px solid #3a4354;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 17px;
+      outline: none;
+      margin-bottom: 12px;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: #6c8cff;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
     }
 
     button {
-      width: 100%;
-      border: 0;
-      border-radius: 14px;
-      padding: 15px;
-      margin-top: 10px;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
       font-size: 17px;
-      font-weight: bold;
       cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
     }
 
     .primary {
-      background: #ffc52b;
-      color: #111;
+      background: #526dff;
+      color: white;
     }
 
     .secondary {
-      background: #122a3c;
+      background: #303746;
       color: white;
-      border: 1px solid #355269;
     }
 
-    input {
-      width: 100%;
-      padding: 15px;
-      border-radius: 13px;
-      border: 1px solid #355269;
-      background: #07131c;
+    .danger {
+      background: #c53b4b;
       color: white;
-      font-size: 18px;
-      text-align: center;
-      outline: none;
     }
 
-    .hidden {
-      display: none;
+    .success {
+      background: #2e9d67;
+      color: white;
     }
 
     .room {
-      font-size: 42px;
-      letter-spacing: 7px;
-      color: #ffc52b;
-      text-align: center;
+      font-size: 38px;
       font-weight: bold;
-      margin: 25px 0;
+      letter-spacing: 5px;
+      color: #6f8cff;
+      margin: 20px 0;
+    }
+
+    .status {
+      padding: 12px;
+      border-radius: 10px;
+      background: #252c3a;
+      color: #c8d0df;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .turn {
+      background: #252c3a;
+      border-radius: 12px;
+      padding: 13px;
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: bold;
     }
 
     .characters {
       display: grid;
-      grid-template-columns: repeat(4,1fr);
-      gap: 8px;
-      margin-top: 15px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 20px;
     }
 
     .character {
-      background: #10202b;
-      border: 1px solid #304858;
-      border-radius: 10px;
-      padding: 8px 4px;
+      background: #242a37;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      padding: 12px;
       text-align: center;
       cursor: pointer;
+      transition: .15s;
+    }
+
+    .character:hover {
+      transform: translateY(-2px);
+    }
+
+    .character.selected {
+      border-color: #6d89ff;
+      background: #303b5a;
+    }
+
+    .character.eliminated {
+      opacity: .25;
+      text-decoration: line-through;
+      filter: grayscale(1);
     }
 
     .avatar {
-      width: 100%;
-      aspect-ratio: 1;
-      border-radius: 8px;
-      background: #172a38;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #3b4660;
       display: flex;
-      justify-content: center;
       align-items: center;
-      color: #ffc52b;
+      justify-content: center;
+      margin: auto;
       font-size: 20px;
       font-weight: bold;
     }
 
-    .character.selected {
-      border: 2px solid #ffc52b;
-    }
-
-    .character.eliminated {
-      opacity: .2;
-      filter: grayscale(1);
-    }
-
     .name {
-      font-size: 11px;
-      margin-top: 6px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 100px;
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 12px;
-      background: #07131c;
-      color: white;
-      border: 1px solid #355269;
-      font-size: 16px;
-      resize: vertical;
-    }
-
-    .turn {
-      text-align: center;
-      background: #3b300c;
-      color: #ffd764;
-      padding: 12px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-    }
-
-    .message {
-      background: #122b3b;
-      padding: 10px;
-      border-radius: 10px;
-      margin-top: 7px;
+      margin-top: 8px;
       font-size: 14px;
     }
 
-    .mine {
-      background: #40350d;
+    .message {
+      background: #252c3a;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 10px;
     }
 
-    @media(max-width:350px) {
+    .question-box {
+      margin-top: 20px;
+    }
+
+    .guess-box {
+      background: #202632;
+      border-radius: 14px;
+      padding: 18px;
+      margin-top: 20px;
+    }
+
+    .attempts {
+      text-align: center;
+      font-size: 18px;
+      margin: 12px 0;
+    }
+
+    .small {
+      color: #9fa9ba;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 600px) {
       .characters {
-        grid-template-columns: repeat(3,1fr);
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .container {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 18px;
       }
     }
   </style>
@@ -208,247 +245,1170 @@
 
 <body>
 
-<div class="app">
-
-  <header>
-    <h1>🎭 خليك ف صفي</h1>
-    <div id="connection" class="status">
-      غير متصل
-    </div>
-  </header>
-
-  <!-- الرئيسية -->
-
-  <section id="home">
-
-    <div class="card center">
-
-      <div class="logo">🎭</div>
-
-      <h2>
-        خليك ف صفي<br>
-        علشان هصفي
-      </h2>
-
-      <p>
-        لعبة تخمين الشخصيات المصرية
-        <br>
-        1 ضد 1
-      </p>
-
-      <button
-        class="primary"
-        onclick="createGame()">
-        🎮 إنشاء مباراة
-      </button>
-
-      <button
-        class="secondary"
-        onclick="showJoin()">
-        🔑 الانضمام لمباراة
-</button>
-</section>
+<div class="container">
+  <div id="home"></div>
 </div>
 
 <script>
-let ws;
-let player = 0;
-let room = "";
-let selected = null;
 
-const characters = [
-"عادل إمام","أحمد زكي","محمود عبد العزيز","نور الشريف",
-"يحيى الفخراني","سعاد حسني","فاتن حمامة","شادية",
-"يسرا","ليلى علوي","إسعاد يونس","إلهام شاهين",
-"أحمد حلمي","كريم عبد العزيز","أحمد السقا","محمد هنيدي",
-"خالد النبوي","محمد منير","عمرو دياب","محمد فؤاد",
-"تامر حسني","هاني شاكر","أنغام","شيرين عبد الوهاب",
-"لطيفة","رامي جمال","أمير كرارة","مي عز الدين",
-"منى زكي","هند صبري"
-];
+  /* =========================
+     بيانات اللعبة
+  ========================= */
 
-function connect() {
-  ws = new WebSocket(
-    (location.protocol === "https:" ? "wss://" : "ws://") +
-    location.host
-  );
+  const characters = [
+    "أحمد",
+    "محمد",
+    "محمود",
+    "عمر",
+    "يوسف",
+    "علي",
+    "حسن",
+    "حسين",
+    "كريم",
+    "خالد",
+    "طارق",
+    "سامح",
+    "شريف",
+    "إسلام",
+    "مصطفى",
+    "عمرو",
+    "رامي",
+    "أحمد حسن",
+    "محمد علي",
+    "محمود سامي",
+    "عمر خالد",
+    "يوسف أحمد",
+    "كريم محمد",
+    "خالد حسن",
+    "طارق علي",
+    "شريف محمود",
+    "رامي أحمد",
+    "سامح عمر",
+    "علي حسن",
+    "مصطفى محمد"
+  ];
 
-  ws.onopen = () => {
-    document.getElementById("connection").textContent = "متصل 🟢";
-    document.getElementById("connection").style.background = "#123d25";
-    document.getElementById("connection").style.color = "#55e889";
-  };
+  let socket = null;
 
-  ws.onclose = () => {
-    document.getElementById("connection").textContent = "غير متصل";
-  };
+  let room = "";
+  let player = null;
 
-  ws.onmessage = e => {
-    const m = JSON.parse(e.data);
+  let selected = null;
 
-    if (m.type === "created") {
-      room = m.room;
-      player = m.player;
-      showRoom();
+  let mySecret = null;
+  let opponentSecret = null;
+
+  let currentTurn = null;
+
+  let eliminated = [];
+
+  let attempts = 3;
+
+  let gameStarted = false;
+
+  let connected = false;
+
+
+  /* =========================
+     الصفحة الرئيسية
+  ========================= */
+
+  function showHome() {
+
+    document.getElementById("home").innerHTML = `
+
+      <div class="card center">
+
+        <div class="logo">
+          خليك في صفي 🎭
+        </div>
+
+        <div class="subtitle">
+          لعبة تخمين الشخصية — لاعب ضد لاعب
+        </div>
+
+        <button class="primary" onclick="createGame()">
+          إنشاء مباراة 🎮
+        </button>
+
+        <button class="secondary" onclick="showJoin()">
+          الانضمام لمباراة 🔑
+        </button>
+
+        <div id="connectionStatus" class="status">
+          جاري الاتصال بالخادم...
+        </div>
+
+      </div>
+    `;
+  }
+
+
+  /* =========================
+     شاشة الدخول
+  ========================= */
+
+  function showJoin() {
+
+    document.getElementById("home").innerHTML = `
+
+      <div class="card center">
+
+        <h2>
+          الانضمام لمباراة 🔑
+        </h2>
+
+        <input
+          id="roomInput"
+          placeholder="اكتب كود الغرفة"
+          maxlength="10"
+        >
+
+        <button
+          class="primary"
+          onclick="joinGame()"
+        >
+          دخول المباراة
+        </button>
+
+        <button
+          class="secondary"
+          onclick="showHome()"
+        >
+          رجوع
+        </button>
+
+      </div>
+
+    `;
+  }
+
+
+  /* =========================
+     إنشاء مباراة
+  ========================= */
+
+  function createGame() {
+
+    if (!connected) {
+      alert("لسه جاري الاتصال بالخادم، حاول بعد ثواني.");
+      return;
     }
 
-    if (m.type === "joined") {
-      player = m.player;
-      if (m.players === 2) showCharacters();
-      else showRoom();
+    send({
+      type: "create"
+    });
+
+  }
+
+
+  /* =========================
+     الانضمام
+  ========================= */
+
+  function joinGame() {
+
+    const box = document.getElementById("roomInput");
+
+    if (!box) return;
+
+    const code = box.value.trim().toUpperCase();
+
+    if (!code) {
+      alert("اكتب كود الغرفة");
+      return;
     }
 
-    if (m.type === "room_ready") {
-      showCharacters();
-    }
+    room = code;
 
-    if (m.type === "game_start") {
-      showGame(m.turn);
-    }
+    send({
+      type: "join",
+      room: code
+    });
 
-    if (m.type === "question") {
-      addMessage("سؤال: " + m.text);
-    }
+  }
 
-    if (m.type === "answer") {
-      addMessage("إجابة: " + m.text);
-    }
 
-    if (m.type === "turn") {
-      addMessage(m.player === player ? "دورك الآن 🎯" : "دور الخصم");
-    }
+  /* =========================
+     انتظار اللاعب الثاني
+  ========================= */
 
-    if (m.type === "winner") {
-      alert(m.player === player ? "🎉 كسبت!" : "😅 الخصم كسب!");
-    }
+  function showRoom() {
 
-    if (m.type === "error") {
-      alert(m.message);
-    }
-  };
-}
+    document.getElementById("home").innerHTML = `
 
-function send(data) {
-  if (ws && ws.readyState === WebSocket.OPEN)
-    ws.send(JSON.stringify(data));
-  else
-    alert("الاتصال بالسيرفر لم يتم بعد.");
-}
+      <div class="card center">
 
-function createGame() {
-  send({type:"create"});
-}
+        <h2>
+          تم إنشاء المباراة 🎮
+        </h2>
 
-function showJoin() {
-  document.getElementById("home").innerHTML = `
-    <div class="card center">
-      <h2>الانضمام لمباراة 🔑</h2>
-      <input id="roomInput" placeholder="اكتب كود الغرفة">
-      <button class="primary" onclick="joinGame()">دخول المباراة</button>
-      <button class="secondary" onclick="location.reload()">رجوع</button>
-    </div>`;
-}
+        <div class="room">
+          ${room}
+        </div>
 
-function joinGame() {
-  const code = document.getElementById("roomInput").value.trim();
-  if (!code) return alert("اكتب كود الغرفة");
-  send({type:"join", room:code});
-  room = code.toUpperCase();
-}
+        <p>
+          ابعت كود الغرفة للاعب الثاني
+        </p>
 
-function showRoom() {
-  document.getElementById("home").innerHTML = `
-    <div class="card center">
-      <h2>تم إنشاء المباراة 🎮</h2>
-      <div class="room">${room}</div>
-      <p>ابعت كود الغرفة للاعب الثاني</p>
-      <p>في انتظار اللاعب الثاني...</p>
-    </div>`;
-}
+        <div class="status">
+          في انتظار اللاعب الثاني...
+        </div>
 
-function showCharacters() {
-  let html = `
-    <div class="card">
-      <h2 class="center">اختار الشخصية السرية 🎭</h2>
-      <p class="center">اختار شخصية واحدة ثم اضغط تأكيد</p>
-      <div class="characters">`;
+      </div>
 
-  characters.forEach((name,i) => {
+    `;
+
+  }
+
+
+  /* =========================
+     اختيار الشخصية
+  ========================= */
+
+  function showCharacters() {
+
+    selected = null;
+
+    let html = `
+
+      <div class="card">
+
+        <h2 class="center">
+          اختار الشخصية السرية 🎭
+        </h2>
+
+        <p class="center small">
+          اختار شخصية واحدة ثم اضغط تأكيد
+        </p>
+
+        <div class="characters">
+    `;
+
+    characters.forEach((name, i) => {
+
+      html += `
+
+        <div
+          class="character"
+          onclick="selectCharacter(${i}, this)"
+        >
+
+          <div class="avatar">
+            ${i + 1}
+          </div>
+
+          <div class="name">
+            ${name}
+          </div>
+
+        </div>
+
+      `;
+
+    });
+
     html += `
-      <div class="character" onclick="selectCharacter(${i},this)">
-        <div class="avatar">${i+1}</div>
-        <div class="name">${name}</div>
-      </div>`;
-  });
 
-  html += `
-      </div>
-      <button class="primary" onclick="confirmCharacter()">
-        تأكيد الشخصية
-      </button>
-    </div>`;
+        </div>
 
-  document.getElementById("home").innerHTML = html;
-}
+        <button
+          class="primary"
+          onclick="confirmCharacter()"
+        >
+          تأكيد الشخصية
+        </button>
 
-function selectCharacter(i,el) {
-  selected = i;
-  document.querySelectorAll(".character")
-    .forEach(x => x.classList.remove("selected"));
-  el.classList.add("selected");
-}
-
-function confirmCharacter() {
-  if (selected === null)
-    return alert("اختار شخصية الأول");
-  send({
-    type:"secret_selected",
-    character:selected
-  });
-  document.getElementById("home").innerHTML = `
-    <div class="card center">
-      <h2>تم اختيار الشخصية ✅</h2>
-      <p>في انتظار اللاعب الآخر...</p>
-    </div>`;
-}
-
-function showGame(turn) {
-  document.getElementById("home").innerHTML = `
-    <div class="card">
-      <div class="turn">
-        ${turn === player ? "دورك 🎯" : "دور الخصم"}
       </div>
 
-      <h2 class="center">اللعبة بدأت 🔥</h2>
+    `;
 
-      <textarea id="question"
-        placeholder="اكتب سؤالك هنا..."></textarea>
+    document.getElementById("home").innerHTML = html;
 
-      <button class="primary" onclick="sendQuestion()">
-        إرسال السؤال
-      </button>
+  }
 
-      <div id="messages"></div>
-    </div>`;
-}
 
-function sendQuestion() {
-  const box = document.getElementById("question");
-  if (!box || !box.value.trim()) return;
-  send({
-    type:"question",
-    text:box.value.trim()
-  });
-  box.value = "";
-}
+  function selectCharacter(i, el) {
 
-function addMessage(text) {
-  const box = document.getElementById("messages");
-  if (box)
-    box.innerHTML += `<div class="message">${text}</div>`;
-}
+    selected = i;
 
-connect();
+    document
+      .querySelectorAll(".character")
+      .forEach(x => x.classList.remove("selected"));
+
+    el.classList.add("selected");
+
+  }
+
+
+  /* =========================
+     تأكيد الشخصية
+  ========================= */
+
+  function confirmCharacter() {
+
+    if (selected === null) {
+
+      alert("اختار شخصية الأول");
+
+      return;
+    }
+
+    mySecret = selected;
+
+    send({
+      type: "secret_selected",
+      character: selected
+    });
+
+    document.getElementById("home").innerHTML = `
+
+      <div class="card center">
+
+        <h2>
+          تم اختيار الشخصية ✅
+        </h2>
+
+        <div class="status">
+          في انتظار اللاعب الآخر...
+        </div>
+
+        <p class="small">
+          الشخصية السرية الخاصة بك:
+          ${characters[selected]}
+        </p>
+
+      </div>
+
+    `;
+
+  }
+
+
+  /* =========================
+     بداية اللعبة
+  ========================= */
+
+  function showGame(turn) {
+
+    gameStarted = true;
+
+    currentTurn = turn;
+
+    eliminated = [];
+
+    attempts = 3;
+
+    document.getElementById("home").innerHTML = `
+
+      <div class="card">
+
+        <div
+          id="turnBox"
+          class="turn"
+        >
+          ${turn === player ? "دورك 🎯" : "دور الخصم ⏳"}
+        </div>
+
+        <h2 class="center">
+          اللعبة بدأت 🔥
+        </h2>
+
+        <p class="center small">
+          اسأل الخصم أسئلة تساعدك على استبعاد الشخصيات.
+        </p>
+
+        <div class="question-box">
+
+          <textarea
+            id="question"
+            placeholder="اكتب سؤالك هنا..."
+          ></textarea>
+
+          <button
+            id="questionButton"
+            class="primary"
+            onclick="sendQuestion()"
+          >
+            إرسال السؤال
+          </button>
+
+        </div>
+
+        <div
+          id="messages"
+        ></div>
+
+        <div class="card">
+
+          <h3 class="center">
+            الشخصيات
+          </h3>
+
+          <p class="center small">
+            اضغط على الشخصية لاستبعادها
+          </p>
+
+          <div
+            id="gameCharacters"
+            class="characters"
+          ></div>
+
+          <button
+            id="finishTurnButton"
+            class="success"
+            onclick="finishTurn()"
+          >
+            إنهاء دورك ➡️
+          </button>
+
+        </div>
+
+        <div class="guess-box">
+
+          <h3 class="center">
+            تخمين الشخصية 🎯
+          </h3>
+
+          <div
+            id="attempts"
+            class="attempts"
+          >
+            محاولات التخمين المتبقية: 3
+          </div>
+
+          <select
+            id="guessSelect"
+            style="
+              width:100%;
+              padding:14px;
+              border-radius:12px;
+              background:#0f131b;
+              color:white;
+              border:1px solid #3a4354;
+              font-size:16px;
+            "
+          >
+          </select>
+
+          <button
+            id="guessButton"
+            class="danger"
+            onclick="makeGuess()"
+          >
+            تخمين الشخصية
+          </button>
+
+        </div>
+
+      </div>
+
+    `;
+
+    renderCharacters();
+
+    updateTurnUI();
+
+  }
+
+
+  /* =========================
+     رسم الشخصيات
+  ========================= */
+
+  function renderCharacters() {
+
+    const box =
+      document.getElementById("gameCharacters");
+
+    if (!box) return;
+
+    box.innerHTML = "";
+
+    characters.forEach((name, i) => {
+
+      const div =
+        document.createElement("div");
+
+      div.className = "character";
+
+      if (eliminated.includes(i)) {
+        div.classList.add("eliminated");
+      }
+
+      div.innerHTML = `
+
+        <div class="avatar">
+          ${i + 1}
+        </div>
+
+        <div class="name">
+          ${name}
+        </div>
+
+      `;
+
+      div.onclick = function() {
+
+        if (currentTurn !== player) {
+
+          alert("مش دورك دلوقتي.");
+
+          return;
+        }
+
+        toggleEliminate(i);
+
+      };
+
+      box.appendChild(div);
+
+    });
+
+    const select =
+      document.getElementById("guessSelect");
+
+    if (select) {
+
+      select.innerHTML =
+        `<option value="">اختار شخصية للتخمين</option>`;
+
+      characters.forEach((name, i) => {
+
+        if (!eliminated.includes(i)) {
+
+          const option =
+            document.createElement("option");
+
+          option.value = i;
+
+          option.textContent = name;
+
+          select.appendChild(option);
+
+        }
+
+      });
+
+    }
+
+  }
+
+
+  /* =========================
+     استبعاد شخصية
+  ========================= */
+
+  function toggleEliminate(i) {
+
+    if (eliminated.includes(i)) {
+
+      eliminated =
+        eliminated.filter(x => x !== i);
+
+    } else {
+
+      eliminated.push(i);
+
+    }
+
+    renderCharacters();
+
+  }
+
+
+  /* =========================
+     إنهاء الدور
+  ========================= */
+
+  function finishTurn() {
+
+    if (currentTurn !== player) {
+
+      alert("مش دورك.");
+
+      return;
+    }
+
+    send({
+      type: "end_turn"
+    });
+
+  }
+
+
+  /* =========================
+     السؤال
+  ========================= */
+
+  function sendQuestion() {
+
+    if (currentTurn !== player) {
+
+      alert("مش دورك دلوقتي.");
+
+      return;
+    }
+
+    const box =
+      document.getElementById("question");
+
+    if (!box) return;
+
+    const text =
+      box.value.trim();
+
+    if (!text) {
+
+      alert("اكتب السؤال الأول.");
+
+      return;
+    }
+
+    send({
+      type: "question",
+      text: text
+    });
+
+    box.value = "";
+
+  }
+
+
+  /* =========================
+     التخمين
+  ========================= */
+
+  function makeGuess() {
+
+    if (currentTurn !== player) {
+
+      alert("مش دورك دلوقتي.");
+
+      return;
+    }
+
+    if (attempts <= 0) {
+
+      alert("انتهت محاولات التخمين.");
+
+      return;
+    }
+
+    const select =
+      document.getElementById("guessSelect");
+
+    if (!select || select.value === "") {
+
+      alert("اختار شخصية للتخمين.");
+
+      return;
+    }
+
+    const character =
+      Number(select.value);
+
+    send({
+      type: "guess",
+      character: character
+    });
+
+  }
+
+
+  /* =========================
+     تحديث الدور
+  ========================= */
+
+  function updateTurnUI() {
+
+    const turnBox =
+      document.getElementById("turnBox");
+
+    const questionButton =
+      document.getElementById("questionButton");
+
+    const finishButton =
+      document.getElementById("finishTurnButton");
+
+    const guessButton =
+      document.getElementById("guessButton");
+
+    if (turnBox) {
+
+      turnBox.textContent =
+        currentTurn === player
+          ? "دورك 🎯"
+          : "دور الخصم ⏳";
+
+    }
+
+    const myTurn =
+      currentTurn === player;
+
+    if (questionButton)
+      questionButton.disabled = !myTurn;
+
+    if (finishButton)
+      finishButton.disabled = !myTurn;
+
+    if (guessButton)
+      guessButton.disabled =
+        !myTurn || attempts <= 0;
+
+  }
+
+
+  /* =========================
+     الرسائل
+  ========================= */
+
+  function addMessage(text) {
+
+    const box =
+      document.getElementById("messages");
+
+    if (!box) return;
+
+    const message =
+      document.createElement("div");
+
+    message.className = "message";
+
+    message.textContent = text;
+
+    box.appendChild(message);
+
+  }
+
+
+  /* =========================
+     شاشة الفوز
+  ========================= */
+
+  function showWinner(text) {
+
+    document.getElementById("home").innerHTML = `
+
+      <div class="card center">
+
+        <h1>
+          🏆
+        </h1>
+
+        <h2>
+          ${text}
+        </h2>
+
+        <button
+          class="primary"
+          onclick="location.reload()"
+        >
+          مباراة جديدة
+        </button>
+
+      </div>
+
+    `;
+
+  }
+
+
+  /* =========================
+     الاتصال بالسيرفر
+  ========================= */
+
+  function connect() {
+
+    try {
+
+      const protocol =
+        location.protocol === "https:"
+          ? "wss:"
+          : "ws:";
+
+      const wsUrl =
+        protocol +
+        "//" +
+        location.host;
+
+      socket =
+        new WebSocket(wsUrl);
+
+      socket.onopen = function() {
+
+        connected = true;
+
+        const status =
+          document.getElementById("connectionStatus");
+
+        if (status) {
+
+          status.textContent =
+            "متصل بالخادم ✅";
+
+        }
+
+      };
+
+
+      socket.onmessage = function(event) {
+
+        let data;
+
+        try {
+
+          data =
+            JSON.parse(event.data);
+
+        } catch (e) {
+
+          console.log(
+            "رسالة غير مفهومة:",
+            event.data
+          );
+
+          return;
+        }
+
+        handleMessage(data);
+
+      };
+
+
+      socket.onclose = function() {
+
+        connected = false;
+
+        const status =
+          document.getElementById("connectionStatus");
+
+        if (status) {
+
+          status.textContent =
+            "انقطع الاتصال بالخادم ❌";
+
+        }
+
+      };
+
+
+      socket.onerror = function() {
+
+        connected = false;
+
+        console.log(
+          "WebSocket error"
+        );
+
+      };
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+
+  }
+
+
+  /* =========================
+     إرسال للسيرفر
+  ========================= */
+
+  function send(data) {
+
+    if (
+      !socket ||
+      socket.readyState !== WebSocket.OPEN
+    ) {
+
+      alert("الاتصال بالخادم غير متاح.");
+
+      return;
+
+    }
+
+    socket.send(
+      JSON.stringify(data)
+    );
+
+  }
+
+
+  /* =========================
+     استقبال رسائل السيرفر
+  ========================= */
+
+  function handleMessage(data) {
+
+    console.log(
+      "SERVER:",
+      data
+    );
+
+
+    /* اللاعب */
+
+    if (data.type === "player") {
+
+      player =
+        data.player;
+
+      return;
+
+    }
+
+
+    /* الغرفة */
+
+    if (
+      data.type === "room_created" ||
+      data.type === "created"
+    ) {
+
+      room =
+        String(data.room || "").toUpperCase();
+
+      showRoom();
+
+      return;
+
+    }
+
+
+    /* دخول الغرفة */
+
+    if (
+      data.type === "joined" ||
+      data.type === "join_success"
+    ) {
+
+      if (data.room)
+        room =
+          String(data.room).toUpperCase();
+
+      addMessage(
+        "تم الدخول إلى الغرفة ✅"
+      );
+
+      return;
+
+    }
+
+
+    /* بداية اختيار الشخصيات */
+
+    if (
+      data.type === "choose_character" ||
+      data.type === "select_character" ||
+      data.type === "start_selection"
+    ) {
+
+      showCharacters();
+
+      return;
+
+    }
+
+
+    /* بداية اللعبة */
+
+    if (
+      data.type === "game_start" ||
+      data.type === "start_game"
+    ) {
+
+      if (data.turn !== undefined)
+        currentTurn = data.turn;
+
+      showGame(currentTurn);
+
+      return;
+
+    }
+
+
+    /* تحديث الدور */
+
+    if (
+      data.type === "turn" ||
+      data.type === "turn_changed"
+    ) {
+
+      currentTurn =
+        data.turn;
+
+      updateTurnUI();
+
+      return;
+
+    }
+
+
+    /* سؤال */
+
+    if (data.type === "question") {
+
+      addMessage(
+        "❓ " +
+        (data.text || "")
+      );
+
+      return;
+
+    }
+
+
+    /* إجابة */
+
+    if (data.type === "answer") {
+
+      addMessage(
+        "💬 " +
+        (data.text || data.answer || "")
+      );
+
+      return;
+
+    }
+
+
+    /* استبعاد */
+
+    if (
+      data.type === "eliminated" ||
+      data.type === "eliminate"
+    ) {
+
+      if (
+        data.character !== undefined &&
+        !eliminated.includes(data.character)
+      ) {
+
+        eliminated.push(
+          data.character
+        );
+
+        renderCharacters();
+
+      }
+
+      return;
+
+    }
+
+
+    /* نتيجة التخمين */
+
+    if (
+      data.type === "guess_result"
+    ) {
+
+      if (data.correct === true) {
+
+        showWinner(
+          "🎉 مبروك! خمنت الشخصية الصحيحة!"
+        );
+
+        return;
+
+      }
+
+      attempts--;
+
+      const attemptsBox =
+        document.getElementById("attempts");
+
+      if (attemptsBox) {
+
+        attemptsBox.textContent =
+          "محاولات التخمين المتبقية: " +
+          attempts;
+
+      }
+
+      if (attempts <= 0) {
+
+        showWinner(
+          "❌ انتهت محاولاتك! الخصم فاز."
+        );
+
+      } else {
+
+        alert(
+          "❌ التخمين غلط! باقي لك " +
+          attempts +
+          " محاولات."
+        );
+
+      }
+
+      updateTurnUI();
+
+      return;
+
+    }
+
+
+    /* فوز */
+
+    if (
+      data.type === "winner" ||
+      data.type === "win"
+    ) {
+
+      showWinner(
+        data.message ||
+        "🏆 أنت الفائز!"
+      );
+
+      return;
+
+    }
+
+
+    /* خسارة */
+
+    if (
+      data.type === "loser" ||
+      data.type === "lose"
+    ) {
+
+      showWinner(
+        data.message ||
+        "❌ خسرت المباراة."
+      );
+
+      return;
+
+    }
+
+
+    /* خطأ */
+
+    if (data.type === "error") {
+
+      alert(
+        data.message ||
+        "حدث خطأ."
+      );
+
+      return;
+
+    }
+
+  }
+
+
+  /* =========================
+     تشغيل اللعبة
+  ========================= */
+
+  showHome();
+
+  connect();
+
 </script>
 
 </body>
