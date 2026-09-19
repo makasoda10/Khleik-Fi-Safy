@@ -245,4 +245,211 @@
       <button
         class="secondary"
         onclick="showJoin()">
-        🔑 الانضمام لمبار
+        🔑 الانضمام لمباراة
+</button>
+</section>
+</div>
+
+<script>
+let ws;
+let player = 0;
+let room = "";
+let selected = null;
+
+const characters = [
+"عادل إمام","أحمد زكي","محمود عبد العزيز","نور الشريف",
+"يحيى الفخراني","سعاد حسني","فاتن حمامة","شادية",
+"يسرا","ليلى علوي","إسعاد يونس","إلهام شاهين",
+"أحمد حلمي","كريم عبد العزيز","أحمد السقا","محمد هنيدي",
+"خالد النبوي","محمد منير","عمرو دياب","محمد فؤاد",
+"تامر حسني","هاني شاكر","أنغام","شيرين عبد الوهاب",
+"لطيفة","رامي جمال","أمير كرارة","مي عز الدين",
+"منى زكي","هند صبري"
+];
+
+function connect() {
+  ws = new WebSocket(
+    (location.protocol === "https:" ? "wss://" : "ws://") +
+    location.host
+  );
+
+  ws.onopen = () => {
+    document.getElementById("connection").textContent = "متصل 🟢";
+    document.getElementById("connection").style.background = "#123d25";
+    document.getElementById("connection").style.color = "#55e889";
+  };
+
+  ws.onclose = () => {
+    document.getElementById("connection").textContent = "غير متصل";
+  };
+
+  ws.onmessage = e => {
+    const m = JSON.parse(e.data);
+
+    if (m.type === "created") {
+      room = m.room;
+      player = m.player;
+      showRoom();
+    }
+
+    if (m.type === "joined") {
+      player = m.player;
+      if (m.players === 2) showCharacters();
+      else showRoom();
+    }
+
+    if (m.type === "room_ready") {
+      showCharacters();
+    }
+
+    if (m.type === "game_start") {
+      showGame(m.turn);
+    }
+
+    if (m.type === "question") {
+      addMessage("سؤال: " + m.text);
+    }
+
+    if (m.type === "answer") {
+      addMessage("إجابة: " + m.text);
+    }
+
+    if (m.type === "turn") {
+      addMessage(m.player === player ? "دورك الآن 🎯" : "دور الخصم");
+    }
+
+    if (m.type === "winner") {
+      alert(m.player === player ? "🎉 كسبت!" : "😅 الخصم كسب!");
+    }
+
+    if (m.type === "error") {
+      alert(m.message);
+    }
+  };
+}
+
+function send(data) {
+  if (ws && ws.readyState === WebSocket.OPEN)
+    ws.send(JSON.stringify(data));
+  else
+    alert("الاتصال بالسيرفر لم يتم بعد.");
+}
+
+function createGame() {
+  send({type:"create"});
+}
+
+function showJoin() {
+  document.getElementById("home").innerHTML = `
+    <div class="card center">
+      <h2>الانضمام لمباراة 🔑</h2>
+      <input id="roomInput" placeholder="اكتب كود الغرفة">
+      <button class="primary" onclick="joinGame()">دخول المباراة</button>
+      <button class="secondary" onclick="location.reload()">رجوع</button>
+    </div>`;
+}
+
+function joinGame() {
+  const code = document.getElementById("roomInput").value.trim();
+  if (!code) return alert("اكتب كود الغرفة");
+  send({type:"join", room:code});
+  room = code.toUpperCase();
+}
+
+function showRoom() {
+  document.getElementById("home").innerHTML = `
+    <div class="card center">
+      <h2>تم إنشاء المباراة 🎮</h2>
+      <div class="room">${room}</div>
+      <p>ابعت كود الغرفة للاعب الثاني</p>
+      <p>في انتظار اللاعب الثاني...</p>
+    </div>`;
+}
+
+function showCharacters() {
+  let html = `
+    <div class="card">
+      <h2 class="center">اختار الشخصية السرية 🎭</h2>
+      <p class="center">اختار شخصية واحدة ثم اضغط تأكيد</p>
+      <div class="characters">`;
+
+  characters.forEach((name,i) => {
+    html += `
+      <div class="character" onclick="selectCharacter(${i},this)">
+        <div class="avatar">${i+1}</div>
+        <div class="name">${name}</div>
+      </div>`;
+  });
+
+  html += `
+      </div>
+      <button class="primary" onclick="confirmCharacter()">
+        تأكيد الشخصية
+      </button>
+    </div>`;
+
+  document.getElementById("home").innerHTML = html;
+}
+
+function selectCharacter(i,el) {
+  selected = i;
+  document.querySelectorAll(".character")
+    .forEach(x => x.classList.remove("selected"));
+  el.classList.add("selected");
+}
+
+function confirmCharacter() {
+  if (selected === null)
+    return alert("اختار شخصية الأول");
+  send({
+    type:"secret_selected",
+    character:selected
+  });
+  document.getElementById("home").innerHTML = `
+    <div class="card center">
+      <h2>تم اختيار الشخصية ✅</h2>
+      <p>في انتظار اللاعب الآخر...</p>
+    </div>`;
+}
+
+function showGame(turn) {
+  document.getElementById("home").innerHTML = `
+    <div class="card">
+      <div class="turn">
+        ${turn === player ? "دورك 🎯" : "دور الخصم"}
+      </div>
+
+      <h2 class="center">اللعبة بدأت 🔥</h2>
+
+      <textarea id="question"
+        placeholder="اكتب سؤالك هنا..."></textarea>
+
+      <button class="primary" onclick="sendQuestion()">
+        إرسال السؤال
+      </button>
+
+      <div id="messages"></div>
+    </div>`;
+}
+
+function sendQuestion() {
+  const box = document.getElementById("question");
+  if (!box || !box.value.trim()) return;
+  send({
+    type:"question",
+    text:box.value.trim()
+  });
+  box.value = "";
+}
+
+function addMessage(text) {
+  const box = document.getElementById("messages");
+  if (box)
+    box.innerHTML += `<div class="message">${text}</div>`;
+}
+
+connect();
+</script>
+
+</body>
+</html>
