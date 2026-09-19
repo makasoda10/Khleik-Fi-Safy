@@ -6,10 +6,7 @@ const WebSocket = require("ws");
 const PORT = process.env.PORT || 8080;
 
 const server = http.createServer((req, res) => {
-
-  let file = req.url === "/"
-    ? "index.html"
-    : req.url.substring(1);
+  let file = req.url === "/" ? "index.html" : req.url.substring(1);
 
   file = path.join(__dirname, file);
 
@@ -26,8 +23,7 @@ const server = http.createServer((req, res) => {
 
   res.writeHead(200, {
     "Content-Type":
-      types[path.extname(file)] ||
-      "application/octet-stream"
+      types[path.extname(file)] || "application/octet-stream"
   });
 
   fs.createReadStream(file).pipe(res);
@@ -71,37 +67,22 @@ const characters = [
 ];
 
 function createCode() {
-
   return Math.random()
     .toString(36)
     .substring(2, 7)
     .toUpperCase();
-
 }
 
 function send(ws, data) {
-
-  if (
-    ws &&
-    ws.readyState === WebSocket.OPEN
-  ) {
-
-    ws.send(
-      JSON.stringify(data)
-    );
-
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(data));
   }
-
 }
 
 function broadcast(room, data) {
-
   room.players.forEach(player => {
-
     send(player.ws, data);
-
   });
-
 }
 
 wss.on("connection", ws => {
@@ -111,192 +92,110 @@ wss.on("connection", ws => {
     let message;
 
     try {
-
-      message =
-        JSON.parse(raw);
-
+      message = JSON.parse(raw);
     } catch {
-
       return;
-
     }
-
-    // إنشاء مباراة
 
     if (message.type === "create") {
 
-      let code =
-        createCode();
+      let code = createCode();
 
       while (rooms.has(code)) {
-
-        code =
-          createCode();
-
+        code = createCode();
       }
 
       const room = {
-
         players: [],
-
         turn: 1,
-
         secrets: {},
-
-        characters:
-          [...characters]
-            .sort(() =>
-              Math.random() - 0.5
-            )
-
+        characters: [...characters].sort(
+          () => Math.random() - 0.5
+        )
       };
 
-      rooms.set(
-        code,
-        room
-      );
+      rooms.set(code, room);
 
       room.players.push({
-
-        ws: ws,
-
+        ws,
         number: 1
-
       });
 
       ws.room = code;
-
       ws.player = 1;
 
       send(ws, {
-
         type: "created",
-
         room: code,
-
         player: 1
-
       });
 
       return;
-
     }
-
-    // الانضمام
 
     if (message.type === "join") {
 
-      const code =
-        String(
-          message.room || ""
-        ).toUpperCase();
-
-      const room =
-        rooms.get(code);
+      const code = String(message.room || "").toUpperCase();
+      const room = rooms.get(code);
 
       if (!room) {
-
         send(ws, {
-
           type: "error",
-
-          message:
-            "الغرفة غير موجودة."
-
+          message: "الغرفة غير موجودة."
         });
-
         return;
-
       }
 
       if (room.players.length >= 2) {
-
         send(ws, {
-
           type: "error",
-
-          message:
-            "الغرفة ممتلئة."
-
+          message: "الغرفة ممتلئة."
         });
-
         return;
-
       }
 
       room.players.push({
-
-        ws: ws,
-
+        ws,
         number: 2
-
       });
 
       ws.room = code;
-
       ws.player = 2;
 
-      room.players.forEach(
-        (p, index) => {
+      room.players.forEach((p, index) => {
+        send(p.ws, {
+          type: "joined",
+          player: index + 1,
+          players: room.players.length
+        });
+      });
 
-          send(p.ws, {
-
-            type: "joined",
-
-            player: index + 1,
-
-            players:
-              room.players.length
-
-          });
-
-        }
-      );
-
-      if (
-        room.players.length === 2
-      ) {
-
-        broadcast(
-          room,
-          {
-            type: "room_ready"
-          }
-        );
-
+      if (room.players.length === 2) {
+        broadcast(room, {
+          type: "room_ready"
+        });
       }
 
       return;
-
     }
 
-    const room =
-      rooms.get(ws.room);
+    const room = rooms.get(ws.room);
 
     if (!room) return;
 
-    // اختيار الشخصية السرية
+    if (message.type === "secret_selected") {
 
-    if (
-      message.type ===
-      "secret_selected"
-    ) {
-
-      const character =
-        Number(message.character);
+      const character = Number(message.character);
 
       if (
         !Number.isInteger(character) ||
         character < 0 ||
         character >= characters.length
       ) {
-
         return;
-
       }
 
-      room.secrets[ws.player] =
-        character;
+      room.secrets[ws.player] = character;
 
       if (
         room.secrets[1] !== undefined &&
@@ -305,117 +204,102 @@ wss.on("connection", ws => {
 
         room.turn = 1;
 
-        broadcast(
-          room,
-          {
-            type: "game_start",
-            turn: 1
-          }
-        );
-
+        broadcast(room, {
+          type: "game_start",
+          turn: 1
+        });
       }
 
       return;
-
     }
 
-    // السؤال
+    if (message.type === "question") {
 
-    if (
-      message.type === "question"
-    ) {
-
-      broadcast(
-        room,
-        {
-          type: "question",
-          text:
-            String(
-              message.text || ""
-            ).slice(0, 300),
-          from: ws.player
-        }
-      );
+      broadcast(room, {
+        type: "question",
+        text: String(message.text || "").slice(0, 300),
+        from: ws.player
+      });
 
       return;
-
     }
 
-    // الإجابة
+    if (message.type === "answer") {
 
-    if (
-      message.type === "answer"
-    ) {
+      room.turn = ws.player === 1 ? 2 : 1;
 
-      room.turn =
-        ws.player === 1
-          ? 2
-          : 1;
+      broadcast(room, {
+        type: "answer",
+        text: String(message.text || "").slice(0, 300),
+        from: ws.player
+      });
 
-      broadcast(
-        room,
-        {
-          type: "answer",
-          text:
-            String(
-              message.text || ""
-            ).slice(0, 300),
-          from: ws.player
-        }
-      );
-
-      broadcast(
-        room,
-        {
-          type: "turn",
-          player: room.turn
-        }
-      );
+      broadcast(room, {
+        type: "turn",
+        player: room.turn
+      });
 
       return;
-
     }
 
-    // التخمين
+    if (message.type === "guess") {
 
-    if (
-      message.type === "guess"
-    ) {
+      const opponent = ws.player === 1 ? 2 : 1;
+      const target = room.secrets[opponent];
+      const guessed = Number(message.character);
 
-      const opponent =
-        ws.player === 1
-          ? 2
-          : 1;
+      if (guessed === target) {
 
-      const target =
-        room.secrets[opponent];
-
-      const guessed =
-        Number(message.character);
-
-      if (
-        guessed === target
-      ) {
-
-        broadcast(
-          room,
-          {
-            type: "winner",
-            player: ws.player
-          }
-        );
+        broadcast(room, {
+          type: "winner",
+          player: ws.player
+        });
 
       } else {
 
-        room.turn =
-          opponent;
+        room.turn = opponent;
 
-        broadcast(
-          room,
-          {
-            type: "wrong_guess",
-            player: ws.player
-          }
-        );
+        broadcast(room, {
+          type: "wrong_guess",
+          player: ws.player
+        });
 
-        broadcast
+        broadcast(room, {
+          type: "turn",
+          player: room.turn
+        });
+      }
+
+      return;
+    }
+
+  });
+
+  ws.on("close", () => {
+
+    const code = ws.room;
+
+    if (!code) return;
+
+    const room = rooms.get(code);
+
+    if (!room) return;
+
+    room.players = room.players.filter(
+      player => player.ws !== ws
+    );
+
+    if (room.players.length === 0) {
+      rooms.delete(code);
+    } else {
+      broadcast(room, {
+        type: "opponent_left"
+      });
+    }
+  });
+
+});
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
