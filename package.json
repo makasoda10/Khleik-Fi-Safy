@@ -1,7 +1,7 @@
 {
-  "name": "khleik-fi-safy",
+  "name": "yalla-nasafy",
   "version": "1.0.0",
-  "description": "خليك ف صفي - لعبة تخمين الشخصيات المصرية",
+  "description": "يلا نصفي - لعبة تخمين الشخصيات المصرية",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

@@ -4,627 +4,136 @@ const path = require("path");
 const WebSocket = require("ws");
 
 const PORT = process.env.PORT || 8080;
-
-const characters = [
-  "عادل إمام",
-  "أحمد زكي",
-  "محمود عبد العزيز",
-  "نور الشريف",
-  "يحيى الفخراني",
-  "سعاد حسني",
-  "فاتن حمامة",
-  "شادية",
-  "يسرا",
-  "ليلى علوي",
-  "إسعاد يونس",
-  "إلهام شاهين",
-  "أحمد حلمي",
-  "كريم عبد العزيز",
-  "أحمد السقا",
-  "محمد هنيدي",
-  "خالد النبوي",
-  "محمد منير",
-  "عمرو دياب",
-  "محمد فؤاد",
-  "تامر حسني",
-  "هاني شاكر",
-  "أنغام",
-  "شيرين عبد الوهاب",
-  "لطيفة",
-  "رامي جمال",
-  "أمير كرارة",
-  "مي عز الدين",
-  "منى زكي",
-  "هند صبري"
-];
-
-/* =========================
-   HTTP SERVER
-========================= */
+const characters = JSON.parse(fs.readFileSync(path.join(__dirname, "characters.json"), "utf8"));
+const recentSets = [];
+const MAX_RECENT_SETS = 25;
 
 const server = http.createServer((req, res) => {
   let requested = req.url.split("?")[0];
-
-  if (requested === "/") {
-    requested = "/index.html";
-  }
-
+  if (requested === "/") requested = "/index.html";
   const cleanPath = requested.replace(/^\/+/, "");
   const filePath = path.join(__dirname, cleanPath);
-
-  if (!filePath.startsWith(__dirname)) {
-    res.writeHead(403);
-    return res.end("Forbidden");
-  }
-
-  if (!fs.existsSync(filePath)) {
-    res.writeHead(404);
-    return res.end("Not found");
-  }
-
+  if (!filePath.startsWith(__dirname)) { res.writeHead(403); return res.end("Forbidden"); }
+  if (!fs.existsSync(filePath)) { res.writeHead(404); return res.end("Not found"); }
   const ext = path.extname(filePath).toLowerCase();
-
-  const types = {
-    ".html": "text/html; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".js": "text/javascript; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".webp": "image/webp",
-    ".svg": "image/svg+xml"
-  };
-
-  res.writeHead(200, {
-    "Content-Type": types[ext] || "application/octet-stream"
-  });
-
+  const types = {".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json; charset=utf-8",".jpg":"image/jpeg",".jpeg":"image/jpeg",".png":"image/png",".webp":"image/webp",".svg":"image/svg+xml"};
+  res.writeHead(200,{"Content-Type":types[ext]||"application/octet-stream","Cache-Control":ext===".jpg"?"public, max-age=86400":"no-cache"});
   fs.createReadStream(filePath).pipe(res);
 });
 
-/* =========================
-   WEBSOCKET
-========================= */
-
 const wss = new WebSocket.Server({ server });
-
 const rooms = new Map();
 
-/* =========================
-   HELPERS
-========================= */
-
-function createCode() {
-  return Math.random()
-    .toString(36)
-    .substring(2, 7)
-    .toUpperCase();
-}
-
-function send(ws, data) {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(data));
+function createCode(){ return Math.random().toString(36).substring(2,7).toUpperCase(); }
+function send(ws,data){ if(ws && ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify(data)); }
+function broadcast(room,data){ room.players.forEach(p=>send(p.ws,data)); }
+function getPlayer(room,n){ return room.players.find(p=>p.number===n); }
+function otherPlayer(n){ return n===1?2:1; }
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+function makeCharacterSet(){
+  const recent = new Set(recentSets.map(s=>s.join(",")));
+  let chosen=[];
+  for(let tries=0;tries<100;tries++){
+    chosen=shuffle([...Array(characters.length).keys()]).slice(0,30).sort((a,b)=>a-b);
+    if(!recent.has(chosen.join(","))) break;
   }
+  recentSets.push(chosen);
+  if(recentSets.length>MAX_RECENT_SETS) recentSets.shift();
+  return chosen.map((sourceIndex)=>({ ...characters[sourceIndex], sourceIndex }));
 }
-
-function broadcast(room, data) {
-  room.players.forEach(player => {
-    send(player.ws, data);
-  });
+function sendState(room){
+  room.players.forEach(p=>send(p.ws,{type:"game_state",turn:room.turn,guessesLeft:p.guessesLeft,players:room.players.length}));
 }
-
-function getPlayer(room, number) {
-  return room.players.find(player => player.number === number);
-}
-
-function otherPlayer(number) {
-  return number === 1 ? 2 : 1;
-}
-
-function sendState(room) {
-  room.players.forEach(player => {
-    send(player.ws, {
-      type: "game_state",
-      turn: room.turn,
-      guessesLeft: player.guessesLeft,
-      players: room.players.length
-    });
-  });
-}
-
-function switchTurn(room) {
-  room.turn = otherPlayer(room.turn);
-
-  const currentPlayer = getPlayer(room, room.turn);
-
-  if (currentPlayer) {
-    currentPlayer.guessesLeft = 3;
-  }
-
+function switchTurn(room){
+  room.turn=otherPlayer(room.turn);
+  const p=getPlayer(room,room.turn); if(p) p.guessesLeft=3;
+  room.pendingQuestion=null;
   sendState(room);
-
-  broadcast(room, {
-    type: "turn_changed",
-    turn: room.turn
-  });
+  broadcast(room,{type:"turn_changed",turn:room.turn});
 }
 
-/* =========================
-   CONNECTION
-========================= */
+wss.on("connection",ws=>{
+  ws.on("message",raw=>{
+    let message; try{ message=JSON.parse(raw.toString()); }catch{ return send(ws,{type:"error",message:"بيانات غير صحيحة."}); }
 
-wss.on("connection", ws => {
+    if(message.type==="create"){
+      let code=createCode(); while(rooms.has(code)) code=createCode();
+      const room={players:[],turn:1,secrets:{},gameStarted:false,finished:false,pendingQuestion:null,characterSet:makeCharacterSet()};
+      rooms.set(code,room);
+      room.players.push({ws,number:1,guessesLeft:3}); ws.room=code; ws.player=1;
+      return send(ws,{type:"created",room:code,player:1,guessesLeft:3});
+    }
 
-  ws.on("message", raw => {
-
-    let message;
-
-    try {
-      message = JSON.parse(raw.toString());
-    } catch (error) {
-      send(ws, {
-        type: "error",
-        message: "بيانات غير صحيحة."
-      });
+    if(message.type==="join"){
+      const code=String(message.room||"").trim().toUpperCase(), room=rooms.get(code);
+      if(!room) return send(ws,{type:"error",message:"الغرفة غير موجودة."});
+      if(room.players.length>=2) return send(ws,{type:"error",message:"الغرفة ممتلئة."});
+      room.players.push({ws,number:2,guessesLeft:3}); ws.room=code; ws.player=2;
+      room.players.forEach(p=>send(p.ws,{type:"joined",player:p.number,players:room.players.length}));
+      if(room.players.length===2){
+        broadcast(room,{type:"room_ready",characters:room.characterSet});
+      }
       return;
     }
 
-    /* =====================
-       CREATE ROOM
-    ===================== */
+    const room=rooms.get(ws.room);
+    if(!room) return send(ws,{type:"error",message:"أنت لست داخل مباراة."});
+    if(room.finished) return send(ws,{type:"error",message:"المباراة انتهت."});
 
-    if (message.type === "create") {
-
-      let code = createCode();
-
-      while (rooms.has(code)) {
-        code = createCode();
+    if(message.type==="secret_selected"){
+      if(room.gameStarted) return;
+      const index=Number(message.character);
+      if(!Number.isInteger(index)||index<0||index>=room.characterSet.length) return send(ws,{type:"error",message:"الشخصية غير صحيحة."});
+      room.secrets[ws.player]=index;
+      send(ws,{type:"secret_confirmed"});
+      if(room.secrets[1]!==undefined&&room.secrets[2]!==undefined){
+        room.gameStarted=true; room.turn=1; room.players.forEach(p=>p.guessesLeft=3);
+        broadcast(room,{type:"game_start",turn:room.turn,characters:room.characterSet}); sendState(room);
       }
-
-      const room = {
-        players: [],
-        turn: 1,
-        secrets: {},
-        gameStarted: false,
-        finished: false,
-        pendingQuestion: null
-      };
-
-      rooms.set(code, room);
-
-      const player = {
-        ws,
-        number: 1,
-        guessesLeft: 3
-      };
-
-      room.players.push(player);
-
-      ws.room = code;
-      ws.player = 1;
-
-      send(ws, {
-        type: "created",
-        room: code,
-        player: 1,
-        guessesLeft: 3
-      });
-
       return;
     }
 
-    /* =====================
-       JOIN ROOM
-    ===================== */
-
-    if (message.type === "join") {
-
-      const code = String(message.room || "")
-        .trim()
-        .toUpperCase();
-
-      const room = rooms.get(code);
-
-      if (!room) {
-        send(ws, {
-          type: "error",
-          message: "الغرفة غير موجودة."
-        });
-        return;
-      }
-
-      if (room.players.length >= 2) {
-        send(ws, {
-          type: "error",
-          message: "الغرفة ممتلئة."
-        });
-        return;
-      }
-
-      const player = {
-        ws,
-        number: 2,
-        guessesLeft: 3
-      };
-
-      room.players.push(player);
-
-      ws.room = code;
-      ws.player = 2;
-
-      room.players.forEach(p => {
-        send(p.ws, {
-          type: "joined",
-          player: p.number,
-          players: room.players.length,
-          guessesLeft: p.guessesLeft
-        });
-      });
-
-      if (room.players.length === 2) {
-        broadcast(room, {
-          type: "room_ready"
-        });
-      }
-
-      return;
+    if(message.type==="question"){
+      if(!room.gameStarted) return;
+      if(room.turn!==ws.player) return send(ws,{type:"error",message:"ليس دورك الآن."});
+      if(room.pendingQuestion) return send(ws,{type:"error",message:"يوجد سؤال يحتاج إلى إجابة."});
+      const text=String(message.text||"").trim().slice(0,300);
+      if(!text) return send(ws,{type:"error",message:"اكتب السؤال أولًا."});
+      room.pendingQuestion={from:ws.player}; broadcast(room,{type:"question",text,from:ws.player}); return;
     }
 
-    /* =====================
-       FIND ROOM
-    ===================== */
-
-    const room = rooms.get(ws.room);
-
-    if (!room) {
-      send(ws, {
-        type: "error",
-        message: "أنت لست داخل مباراة."
-      });
-      return;
+    if(message.type==="answer"){
+      if(!room.gameStarted||!room.pendingQuestion) return send(ws,{type:"error",message:"لا يوجد سؤال يحتاج إلى إجابة."});
+      if(room.pendingQuestion.from===ws.player) return send(ws,{type:"error",message:"لا يمكنك الإجابة على سؤالك."});
+      const answer=String(message.answer||message.text||"").trim().slice(0,100);
+      if(!answer) return send(ws,{type:"error",message:"اكتب الإجابة أولًا."});
+      broadcast(room,{type:"answer",answer,from:ws.player}); room.pendingQuestion=null; return;
     }
 
-    if (room.finished) {
-      send(ws, {
-        type: "error",
-        message: "المباراة انتهت."
-      });
-      return;
+    if(message.type==="guess"||message.type==="guess_character"){
+      if(!room.gameStarted) return;
+      if(room.turn!==ws.player) return send(ws,{type:"error",message:"ليس دورك الآن."});
+      const guessed=Number(message.character!==undefined?message.character:message.guess), opponent=otherPlayer(ws.player), secret=room.secrets[opponent];
+      if(!Number.isInteger(guessed)||guessed<0||guessed>=room.characterSet.length) return send(ws,{type:"error",message:"الشخصية غير صحيحة."});
+      if(guessed===secret){ room.finished=true; return broadcast(room,{type:"game_over",winner:ws.player,loser:opponent,character:secret,message:"مبروك! لقد خمنت الشخصية السرية بشكل صحيح."}); }
+      const p=getPlayer(room,ws.player); if(p) p.guessesLeft--;
+      if(p&&p.guessesLeft<=0){ room.finished=true; return broadcast(room,{type:"game_over",winner:opponent,loser:ws.player,character:secret,message:"انتهت محاولات التخمين الثلاث. الخصم يفوز!"}); }
+      sendState(room); send(ws,{type:"wrong_guess",guessesLeft:p.guessesLeft}); return;
     }
 
-    /* =====================
-       SELECT SECRET
-    ===================== */
-
-    if (message.type === "secret_selected") {
-
-      if (room.gameStarted) {
-        return;
-      }
-
-      const character = Number(message.character);
-
-      if (
-        !Number.isInteger(character) ||
-        character < 0 ||
-        character >= characters.length
-      ) {
-        send(ws, {
-          type: "error",
-          message: "الشخصية غير صحيحة."
-        });
-        return;
-      }
-
-      room.secrets[ws.player] = character;
-
-      send(ws, {
-        type: "secret_confirmed"
-      });
-
-      if (
-        room.secrets[1] !== undefined &&
-        room.secrets[2] !== undefined
-      ) {
-
-        room.gameStarted = true;
-        room.turn = 1;
-
-        room.players.forEach(player => {
-          player.guessesLeft = 3;
-        });
-
-        broadcast(room, {
-          type: "game_start",
-          turn: room.turn
-        });
-
-        sendState(room);
-      }
-
-      return;
+    if(message.type==="end_turn"||message.type==="finish_turn"){
+      if(!room.gameStarted) return;
+      if(room.turn!==ws.player) return send(ws,{type:"error",message:"ليس دورك الآن."});
+      if(room.pendingQuestion) return send(ws,{type:"error",message:"يجب إنهاء السؤال الحالي أولًا."});
+      switchTurn(room); return;
     }
-
-    /* =====================
-       ASK QUESTION
-    ===================== */
-
-    if (message.type === "question") {
-
-      if (!room.gameStarted) {
-        return;
-      }
-
-      if (room.turn !== ws.player) {
-        send(ws, {
-          type: "error",
-          message: "ليس دورك الآن."
-        });
-        return;
-      }
-
-      if (room.pendingQuestion) {
-        send(ws, {
-          type: "error",
-          message: "يوجد سؤال يحتاج إلى إجابة."
-        });
-        return;
-      }
-
-      const text = String(message.text || "")
-        .trim()
-        .slice(0, 500);
-
-      if (!text) {
-        send(ws, {
-          type: "error",
-          message: "اكتب السؤال أولًا."
-        });
-        return;
-      }
-
-      room.pendingQuestion = {
-        from: ws.player
-      };
-
-      broadcast(room, {
-        type: "question",
-        text,
-        from: ws.player
-      });
-
-      return;
-    }
-
-    /* =====================
-       ANSWER QUESTION
-    ===================== */
-
-    if (message.type === "answer") {
-
-      if (!room.gameStarted) {
-        return;
-      }
-
-      if (!room.pendingQuestion) {
-        send(ws, {
-          type: "error",
-          message: "لا يوجد سؤال يحتاج إلى إجابة."
-        });
-        return;
-      }
-
-      if (room.pendingQuestion.from === ws.player) {
-        send(ws, {
-          type: "error",
-          message: "لا يمكنك الإجابة على سؤالك."
-        });
-        return;
-      }
-
-      const answer = String(message.answer || message.text || "")
-        .trim()
-        .slice(0, 100);
-
-      if (!answer) {
-        send(ws, {
-          type: "error",
-          message: "اكتب الإجابة أولًا."
-        });
-        return;
-      }
-
-      broadcast(room, {
-        type: "answer",
-        answer,
-        from: ws.player
-      });
-
-      room.pendingQuestion = null;
-
-      return;
-    }
-
-    /* =====================
-       GUESS CHARACTER
-    ===================== */
-
-    if (
-      message.type === "guess" ||
-      message.type === "guess_character"
-    ) {
-
-      if (!room.gameStarted) {
-        return;
-      }
-
-      if (room.turn !== ws.player) {
-        send(ws, {
-          type: "error",
-          message: "ليس دورك الآن."
-        });
-        return;
-      }
-
-      const guessedCharacter = Number(
-        message.character !== undefined
-          ? message.character
-          : message.guess
-      );
-
-      if (
-        !Number.isInteger(guessedCharacter) ||
-        guessedCharacter < 0 ||
-        guessedCharacter >= characters.length
-      ) {
-        send(ws, {
-          type: "error",
-          message: "الشخصية غير صحيحة."
-        });
-        return;
-      }
-
-      const opponent = otherPlayer(ws.player);
-      const secretCharacter = room.secrets[opponent];
-
-      if (guessedCharacter === secretCharacter) {
-
-        room.finished = true;
-
-        broadcast(room, {
-          type: "game_over",
-          winner: ws.player,
-          loser: opponent,
-          character: secretCharacter,
-          message:
-            "مبروك! لقد خمنت الشخصية السرية بشكل صحيح."
-        });
-
-        return;
-      }
-
-      const player = getPlayer(room, ws.player);
-
-      if (player) {
-        player.guessesLeft--;
-      }
-
-      if (player && player.guessesLeft <= 0) {
-
-        room.finished = true;
-
-        broadcast(room, {
-          type: "game_over",
-          winner: opponent,
-          loser: ws.player,
-          character: secretCharacter,
-          message:
-            "انتهت محاولات التخمين الثلاث. الخصم يفوز!"
-        });
-
-        return;
-      }
-
-      sendState(room);
-
-      send(ws, {
-        type: "wrong_guess",
-        guessesLeft: player.guessesLeft
-      });
-
-      return;
-    }
-
-    /* =====================
-       END TURN
-    ===================== */
-
-    if (
-      message.type === "end_turn" ||
-      message.type === "finish_turn"
-    ) {
-
-      if (!room.gameStarted) {
-        return;
-      }
-
-      if (room.turn !== ws.player) {
-        send(ws, {
-          type: "error",
-          message: "ليس دورك الآن."
-        });
-        return;
-      }
-
-      if (room.pendingQuestion) {
-        send(ws, {
-          type: "error",
-          message: "يجب إنهاء السؤال الحالي أولًا."
-        });
-        return;
-      }
-
-      switchTurn(room);
-
-      return;
-    }
-
-    /* =====================
-       PING
-    ===================== */
-
-    if (message.type === "ping") {
-      send(ws, {
-        type: "pong"
-      });
-      return;
-    }
-
-    /* =====================
-       UNKNOWN MESSAGE
-    ===================== */
-
-    send(ws, {
-      type: "error",
-      message: "أمر غير معروف."
-    });
   });
 
-  /* =====================
-     DISCONNECT
-  ===================== */
-
-  ws.on("close", () => {
-
-    const room = rooms.get(ws.room);
-
-    if (!room) {
-      return;
-    }
-
-    room.players = room.players.filter(
-      player => player.ws !== ws
-    );
-
-    if (room.players.length === 0) {
-      rooms.delete(ws.room);
-      return;
-    }
-
-    broadcast(room, {
-      type: "player_left",
-      message: "الخصم غادر المباراة."
-    });
-
-    rooms.delete(ws.room);
+  ws.on("close",()=>{
+    const room=rooms.get(ws.room); if(!room) return;
+    room.players=room.players.filter(p=>p.ws!==ws);
+    if(room.players.length===0) rooms.delete(ws.room);
+    else { broadcast(room,{type:"player_left",message:"الخصم غادر المباراة."}); rooms.delete(ws.room); }
   });
 });
-
-/* =========================
-   START SERVER
-========================= */
-
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(PORT,"0.0.0.0",()=>console.log(`Yalla Nasafy server running on port ${PORT}`));
